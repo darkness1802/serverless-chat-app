@@ -1,36 +1,46 @@
 import { View, Text, Image, Dimensions, TouchableOpacity, ScrollView } from "react-native";
-import { BGImage, Logo, man1, man2, man3, man4, woman1, woman2, woman3, woman4, cat } from "../assets"
+import { BGImage, Logo, avatars } from "../assets"
 import UserInput from "../components/UserInput";
 import { useState } from "react";
 import { useNavigation } from "@react-navigation/native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { firebaseAuth } from "../configs/firebase.config";
+import { firebaseAuth, firebaseStore } from "../configs/firebase.config";
+import { doc, setDoc } from "firebase/firestore";
 
 export default function Signup() {
 
     const screenWidth = Math.round(Dimensions.get("window").width)
     const screenHeight = Math.round(Dimensions.get("window").height)
     const [email, setEmail] = useState()
+    const [name, setName] = useState()
     const [password, setPassword] = useState()
     const navigation = useNavigation()
 
-    const avatars = [man1, man2, man3, man4, woman1, woman2, woman3, woman4, cat]
-
-    const [currentAvatar, $currentAvatar] = useState(man1)
+    const [currentAvatar, $currentAvatar] = useState(avatars[0].uri)
     const [showAvatarSelector, $showAvatarSelector] = useState(false)
 
     const handleChangeAvatar = (i) => {
-        $currentAvatar(i)
+        $currentAvatar(i.uri)
         $showAvatarSelector(false)
     }
 
     const handleSignup = async () => {
         try {
             // Valid values first
-            let auth = await createUserWithEmailAndPassword(firebaseAuth, email, password)
-            console.log(auth.user)
+            let { user } = await createUserWithEmailAndPassword(firebaseAuth, email, password)
+            
+            const res = {
+                _id: user.uid,
+                fullName: name,
+                avatar: currentAvatar,
+                providerData: user.providerData[0]
+            }
+
+            await setDoc(doc(firebaseStore, 'users', user.uid), res)
+
+            navigation.navigate("Signin")
         } catch (err) {
             console.log(err)
         }
@@ -46,8 +56,8 @@ export default function Signup() {
                     style={{ width: screenWidth, height: screenHeight }}
                 >
                     {avatars.map(i => {
-                        return <TouchableOpacity key={i} onPress={() => handleChangeAvatar(i)} className="w-20 m-3 h-20 p-1 rounded-full border-2 border-primary relative">
-                            <Image source={i} className="w-full h-full" resizeMode="contain" />
+                        return <TouchableOpacity key={i.name} onPress={() => handleChangeAvatar(i)} className="w-20 m-3 h-20 p-1 rounded-full border-2 border-primary relative">
+                            <Image source={{ uri: i.uri }} className="w-full h-full" resizeMode="contain" />
                         </TouchableOpacity>
                     })}
 
@@ -61,7 +71,7 @@ export default function Signup() {
 
             <View className="w-full flex items-center justify-center relative -my-2">
                 <TouchableOpacity onPress={() => $showAvatarSelector(true)} className="w-20 h-20 rounded-full border-2 border-primary relative">
-                    <Image source={currentAvatar} className="w-full h-full" resizeMode="contain" />
+                    <Image source={{ uri: currentAvatar }} className="w-full h-full" resizeMode="contain" />
                     <View className="w-6 h-6 bg-primary rounded-full absolute top-0 right-0 flex items-center justify-center">
                         <MaterialIcons name="edit" size={18} color={"#fff"} />
                     </View>
@@ -76,7 +86,7 @@ export default function Signup() {
 
                 <UserInput placeholder="Full name"
                     isPassword={false}
-                    setStateValue={setEmail}
+                    setStateValue={setName}
                 />
 
                 <UserInput placeholder="Password"
