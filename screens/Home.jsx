@@ -1,14 +1,40 @@
 import { View, Image, Text, SafeAreaView, TouchableOpacity, ScrollView, ActivityIndicatorBase, ActivityIndicator } from "react-native"
 import { useSelector } from "react-redux"
+import { useNavigation } from "@react-navigation/native"
 import { Logo } from "../assets"
 import { Ionicons } from "@expo/vector-icons"
-import { useState } from "react"
+import { useLayoutEffect, useState } from "react"
 import MessageCard from "../components/Message/Message.Card"
+import { collection, onSnapshot, orderBy, query } from "firebase/firestore"
+import { firebaseStore } from "../configs/firebase.config"
 
 export default function Home() {
 
     const user = useSelector((state) => state.user)
-    const [isLoading, $isLoading] = useState(false)
+    const [isLoading, $isLoading] = useState(true)
+    const [messages, $messages] = useState(false)
+    const nav = useNavigation()
+
+    useLayoutEffect(() => {
+        const $query = query(collection(firebaseStore, "chats"), orderBy("_id", "desc"))
+
+        const unsubscribe = onSnapshot($query, (snapshot) => {
+            const soup = snapshot.docs.map(doc => doc.data())
+
+            console.log(soup)
+
+            $messages(soup)
+            $isLoading(false)
+        })
+
+        // tra ve de tam dung listening cac updates
+        return unsubscribe
+    }, [])
+
+    const createMessage = () => {
+        console.log(`Hello world`)
+        nav.navigate("Messager")
+    }
 
     return <View className="flex-1">
         <SafeAreaView>
@@ -25,7 +51,7 @@ export default function Home() {
                         <Text className="text-primaryText text-lg font-extrabold pb-2">
                             Message
                         </Text>
-                        <TouchableOpacity>
+                        <TouchableOpacity onPress={createMessage}>
                             <Ionicons name="chatbox" size={24} color={"#555"} />
                         </TouchableOpacity>
                     </View>
@@ -36,18 +62,7 @@ export default function Home() {
                         </View>
 
                         : <View className="px-6">
-                            <MessageCard />
-                            <MessageCard />
-                            <MessageCard />
-                            <MessageCard />
-                            <MessageCard />
-                            <MessageCard />
-                            <MessageCard />
-                            <MessageCard />
-                            <MessageCard />
-                            <MessageCard />
-                            <MessageCard />
-                            <MessageCard />
+                            { messages && messages.map(i => <MessageCard key={i._id} data={i} />) }
                         </View>
                     }
 

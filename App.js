@@ -1,5 +1,5 @@
 import { View, Text, TouchableOpacity } from "react-native"
-import { Home, Splash, Signin, Signup } from "./screens"
+import { Home, Splash, Signin, Signup, Messager } from "./screens"
 import React from "react"
 import { Provider } from "react-redux"
 import { NavigationContainer } from "@react-navigation/native"
@@ -16,6 +16,7 @@ const App = () => {
         <Stack.Screen name="Signin" component={Signin} />
         <Stack.Screen name="Signup" component={Signup} />
         <Stack.Screen name="Home" component={Home} />
+        <Stack.Screen name="Messager" component={Messager} />
       </Stack.Navigator>
     </Provider>
   </NavigationContainer>
